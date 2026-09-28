@@ -1,0 +1,14 @@
+.git
+data
+.env
+.venv
+__pycache__
+_api_docs_extract
+_api_test_output
+*.zip
+*.key
+private
+agent-transcripts
+backups
+canvases
+

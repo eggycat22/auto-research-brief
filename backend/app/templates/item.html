@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ item.title }} · 研读{% endblock %}
+{% block body %}
+<article class="split">
+  <section class="reading">
+    <p class="reading-back"><a href="{{ back_href }}">{{ back_label }}</a></p>
+    <h1>{{ item.title }}</h1>
+    {% if item.source_url %}
+    <p class="origin"><a href="{{ item.source_url }}" target="_blank" rel="noreferrer">原文</a></p>
+    {% endif %}
+    <div class="prose">{{ item.body_md | md | safe }}</div>
+    <form class="inline-actions" method="post" action="/item/{{ item.id }}/later">
+      <button type="submit" class="btn ghost">稍后再读</button>
+    </form>
+    <form class="inline-actions" method="post" action="/item/{{ item.id }}/delete" onsubmit="return confirm('删除这篇文章？')">
+      <button type="submit" class="btn ghost danger">删除</button>
+    </form>
+  </section>
+  <aside class="talk">
+    <header class="talk-head">
+      <h2>追问</h2>
+    </header>
+    <div id="thread" class="thread" aria-live="polite">
+      {% if not messages %}
+      <div class="talk-empty" id="talk-empty">
+        <p>指出一段、问一个概念，或从下面开始。</p>
+        <div class="talk-starters">
+          <button type="button" data-ask="这篇真正在解决什么？">这篇在解决什么</button>
+          <button type="button" data-ask="关键假设站得住吗？哪些地方证据不够？">关键假设站得住吗</button>
+          <button type="button" data-ask="和常见做法差在哪？">和常见做法差在哪</button>
+        </div>
+      </div>
+      {% endif %}
+      {% for m in messages %}
+      <div class="msg {{ m.role }}">
+        <span class="msg-who">{{ '你' if m.role == 'user' else '研读' }}</span>
+        {% if m.role == 'assistant' %}
+        <div class="msg-body prose-lite">{{ m.content | chat_md | safe }}</div>
+        {% else %}
+        <div class="msg-body">{{ m.content }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <form id="chat-form" data-item="{{ item.id }}">
+      <textarea name="message" rows="1" placeholder="读到哪，问哪…" required aria-label="追问这篇文章"></textarea>
+      <button type="submit" class="talk-send" aria-label="发送追问">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 13L13 3M7 3h6v6" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="square" stroke-linejoin="miter" />
+        </svg>
+      </button>
+    </form>
+  </aside>
+</article>
+{% endblock %}
+{% block scripts %}
+<script src="/static/js/chat.js?v=8"></script>
+{% endblock %}

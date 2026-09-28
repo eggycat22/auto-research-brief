@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}研读{% endblock %}</title>
+  <script>try{var t=localStorage.getItem('yandu-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/app.css?v=44" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="rail">
+      <a class="brand" href="/">
+        <img src="/static/art/mark.jpg" alt="" class="brand-mark" onerror="this.style.display='none'" />
+        <span>
+          <strong>研读</strong>
+          <em>Close Read</em>
+        </span>
+      </a>
+      <nav>
+        <a href="/" class="{{ 'on' if request.url.path == '/' else '' }}">今日</a>
+        <a href="/library" class="{{ 'on' if request.url.path.startswith('/library') else '' }}">文库</a>
+        <a href="/inbox" class="{{ 'on' if request.url.path.startswith('/inbox') else '' }}">灵感</a>
+        <a href="/tasks" class="{{ 'on' if request.url.path.startswith('/tasks') else '' }}">任务</a>
+        <a href="/runs" class="{{ 'on' if request.url.path.startswith('/runs') else '' }}">运行{% if running_jobs %} · {{ running_jobs|length }}{% endif %}</a>
+        <a href="/settings" class="{{ 'on' if request.url.path.startswith('/settings') else '' }}">设置</a>
+      </nav>
+      <div class="rail-foot">
+        <button type="button" class="btn ghost" id="theme-toggle">日间 / 夜间</button>
+        <form method="post" action="/logout">
+          <button type="submit">退出</button>
+        </form>
+      </div>
+    </aside>
+    <main class="page">
+      {% block body %}{% endblock %}
+    </main>
+  </div>
+  <script src="/static/js/app.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

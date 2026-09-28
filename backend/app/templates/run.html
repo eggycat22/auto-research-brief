@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}运行 #{{ run.id }} · 研读{% endblock %}
+{% block body %}
+<header class="mast">
+  <div>
+    <p class="run-task"><a href="/runs">{% if run.task_label and run.task_name and run.task_label != run.task_name %}{{ run.task_label }} · {% endif %}{{ run.task_name or run.task_label }}</a></p>
+    <h1>运行 #{{ run.id }}</h1>
+    <p class="lede" id="run-meta">{{ run.status }} · {{ run.started_at }} → {{ run.finished_at or '进行中' }} · {{ run | money }}</p>
+  </div>
+</header>
+<pre class="log" id="run-log">{{ run.log_text or '正在启动，稍候…' }}</pre>
+{% if run.error %}<p class="warn" id="run-error">错误类型：{{ run.error }}</p>{% endif %}
+{% if run.status == 'running' %}
+<p class="lede" id="run-hint">日志每 3 秒更新。</p>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+{% if run.status == 'running' %}
+<script>
+(function () {
+  var id = {{ run.id }};
+  var logEl = document.getElementById('run-log');
+  var metaEl = document.getElementById('run-meta');
+  function tick() {
+    fetch('/api/runs/' + id, { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.log_text) logEl.textContent = data.log_text;
+        var money = (data.status === 'running' && !(data.cost_usd > 0)) ? '结算中' : (function (usd) {
+          if (!(usd > 0)) return '—';
+          var cny = usd * {{ usd_cny }};
+          if (cny < 0.01) return '¥' + cny.toFixed(4);
+          if (cny < 1) return '¥' + cny.toFixed(3);
+          return '¥' + cny.toFixed(2);
+        })(Number(data.cost_usd));
+        metaEl.textContent = (data.status || '') + ' · ' + (data.started_at || '') + ' → ' + (data.finished_at || '进行中') + ' · ' + money;
+        logEl.scrollTop = logEl.scrollHeight;
+        if (data.status === 'running') setTimeout(tick, 3000);
+        else location.replace('/runs/' + id + '?done=1');
+      })
+      .catch(function () { setTimeout(tick, 4000); });
+  }
+  setTimeout(tick, 1500);
+})();
+</script>
+{% endif %}
+{% endblock %}

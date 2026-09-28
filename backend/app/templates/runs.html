@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% from "macros.html" import hint %}
+{% block title %}运行 · 研读{% endblock %}
+{% block body %}
+<header class="mast">
+  <div>
+    <h1>运行记录{{ hint("每一次任务执行都会留下记录。") }}</h1>
+    <p class="lede">任务执行记录。</p>
+  </div>
+</header>
+<table class="table">
+  <thead>
+    <tr><th>ID</th><th>任务</th><th>状态</th><th>开始</th><th>hit / miss / out</th><th>费用</th></tr>
+  </thead>
+  <tbody>
+    {% for r in runs %}
+    <tr>
+      <td><a href="/runs/{{ r.id }}">#{{ r.id }}</a></td>
+      <td>
+        <a href="/runs/{{ r.id }}">{{ r.task_name }}</a>
+        {% if r.task_label and r.task_label != r.task_name %}
+        <div class="lede">{{ r.task_label }}</div>
+        {% endif %}
+      </td>
+      <td><span class="tag {{ r.status }}">{{ r.status }}</span></td>
+      <td>{{ r.started_at }}</td>
+      <td>{{ r.token_in_hit }} / {{ r.token_in_miss }} / {{ r.token_out }}</td>
+      <td>{{ r | money }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% if pages > 1 %}
+<nav class="pager">
+  {% if page > 1 %}<a href="/runs?page={{ page - 1 }}">上一页</a>{% endif %}
+  <span>{{ page }} / {{ pages }}</span>
+  {% if page < pages %}<a href="/runs?page={{ page + 1 }}">下一页</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+{% if running_jobs %}
+<script>
+setTimeout(function () {
+  var page = new URLSearchParams(location.search).get('page');
+  location.replace('/runs' + (page ? ('?page=' + page) : ''));
+}, 4000);
+</script>
+{% endif %}
+{% endblock %}

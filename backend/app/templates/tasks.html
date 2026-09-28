@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% from "macros.html" import hint %}
+{% block title %}任务 · 研读{% endblock %}
+{% block body %}
+<header class="mast">
+  <div>
+    <h1>任务{{ hint("定时任务可改时间，也可立刻运行。暂停后不再按点跑，仍可点立即运行；正在跑的这一次会跑完。") }}</h1>
+    <p class="lede">日程、信源，以及这条任务给模型的指令。</p>
+  </div>
+</header>
+
+<details class="fold" open>
+  <summary>现有任务</summary>
+  <div class="fold-body">
+    {% if tasks %}
+    <div class="row task-bulk">
+      <form method="post" action="/tasks/pause-all">
+        <button class="btn ghost" type="submit">全部暂停</button>
+      </form>
+      <form method="post" action="/tasks/resume-all">
+        <button class="btn ghost" type="submit">全部继续</button>
+      </form>
+    </div>
+    {% endif %}
+    {% for t in tasks %}
+    {% set cfg = t.config_json | loads %}
+    <div class="task-card{% if not t.enabled %} is-paused{% endif %}">
+      <div class="task-bar">
+        <div>
+          <strong>{{ t.name }}</strong>
+          <p class="lede">{% if (t.type | task_label) != t.name %}{{ t.type | task_label }} · {% endif %}{{ t.cron | cron_zh }}{% if t.enabled %} · 定时中{% else %} · 已暂停{% endif %}</p>
+        </div>
+        <div class="row">
+          {% if t.enabled %}
+          <form method="post" action="/tasks/{{ t.id }}/pause">
+            <button class="btn ghost" type="submit">暂停</button>
+          </form>
+          {% else %}
+          <form method="post" action="/tasks/{{ t.id }}/resume">
+            <button class="btn" type="submit">继续</button>
+          </form>
+          {% endif %}
+          <form method="post" action="/tasks/{{ t.id }}/run">
+            <button class="btn ghost" type="submit">立即运行</button>
+          </form>
+          {% if confirm_delete == t.id %}
+          <form method="post" action="/tasks/{{ t.id }}/delete" class="confirm-box">
+            <input type="hidden" name="confirm" value="yes" />
+            <span>将移入回收站。</span>
+            <button class="btn danger" type="submit">确认删除</button>
+            <a class="btn ghost" href="/tasks">取消</a>
+          </form>
+          {% else %}
+          <a class="btn ghost danger" href="/tasks?confirm_delete={{ t.id }}">删除</a>
+          {% endif %}
+        </div>
+      </div>
+      <details class="inner-fold" {% if confirm_delete == t.id %}open{% endif %}>
+        <summary>编辑</summary>
+        <form class="inner-form" method="post" action="/tasks/{{ t.id }}/save">
+          <div class="grid2">
+            <label>名称 <input name="name" value="{{ t.name }}" /></label>
+            <label>重复
+              <select name="repeat">
+                {% for key, label, _dow in repeat_options %}
+                <option value="{{ key }}" {{ 'selected' if (t.cron | cron_repeat) == key else '' }}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label>时
+              <select name="hour">
+                {% for h in hours %}
+                <option value="{{ h }}" {{ 'selected' if (t.cron | cron_hour)|int == h else '' }}>{{ '%02d'|format(h) }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label>分
+              <select name="minute">
+                {% set mcur = (t.cron | cron_minute)|int %}
+                {% for m in minutes %}
+                <option value="{{ m }}" {{ 'selected' if mcur == m else '' }}>{{ '%02d'|format(m) }}</option>
+                {% endfor %}
+                {% if mcur not in minutes %}
+                <option value="{{ mcur }}" selected>{{ '%02d'|format(mcur) }}</option>
+                {% endif %}
+              </select>
+            </label>
+            {% if t.type in ['frontier_digest', 'daily_briefing'] %}
+            <label>快讯条数 <input type="number" name="explain_count" value="{{ cfg.get('explain_count', 8) }}" /></label>
+            <label>最低分 <input type="number" step="0.5" name="min_score" value="{{ cfg.get('min_score', 7) }}" /></label>
+            {% elif t.type == 'github_star' %}
+            <label>优先仓库（owner/repo） <input name="prefer_repo" value="{{ cfg.get('prefer_repo', '') }}" placeholder="留空则按新收藏选择" /></label>
+            {% endif %}
+          </div>
+          <p class="lede mono">调度表达式 {{ t.cron }}{% if not t.enabled %} · 已暂停{% endif %}</p>
+          {% set pnames = task_prompts.get(t.type, []) %}
+          {% if pnames %}
+          <div class="prompt-stack">
+            <p class="lede">给模型的指令。同类任务共用；改完点下面的保存。</p>
+            {% for pname in pnames %}
+            {% set meta = prompt_meta.get(pname, {}) %}
+            <details class="inner-fold">
+              <summary>{{ meta.get('title', pname) }}</summary>
+              <div class="prompt-field">
+                <p class="lede">{{ meta.get('step', '') }}{% if pname == 'research' %} Star 精讲与 Agentic 精读共用。{% endif %}</p>
+                <textarea name="prompt_{{ pname }}" rows="16">{{ prompt_bodies.get(pname, '') }}</textarea>
+              </div>
+            </details>
+            {% endfor %}
+          </div>
+          {% endif %}
+          <button class="btn" type="submit">保存</button>
+        </form>
+      </details>
+    </div>
+    {% endfor %}
+  </div>
+</details>
+
+<details class="fold">
+  <summary>新增任务</summary>
+  <div class="fold-body">
+    <form class="inner-form" method="post" action="/tasks">
+      <div class="grid2">
+        <label>名称 <input name="name" required placeholder="例如：周日加跑快讯" /></label>
+        <label>类型
+          <select name="type">
+            <option value="frontier_digest">前沿快讯</option>
+            <option value="github_star">GitHub Star 精讲</option>
+            <option value="agentic_reading">Agentic 精读</option>
+          </select>
+        </label>
+        <label>重复
+          <select name="repeat">
+            {% for key, label, _dow in repeat_options %}
+            <option value="{{ key }}" {{ 'selected' if key == 'sat' else '' }}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>时
+          <select name="hour">
+            {% for h in hours %}
+            <option value="{{ h }}" {{ 'selected' if h == 20 else '' }}>{{ '%02d'|format(h) }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>分
+          <select name="minute">
+            {% for m in minutes %}
+            <option value="{{ m }}">{{ '%02d'|format(m) }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>快讯条数（仅快讯） <input type="number" name="explain_count" value="8" /></label>
+      </div>
+      <button class="btn" type="submit">添加</button>
+    </form>
+  </div>
+</details>
+
+{% if trash %}
+<details class="fold" open>
+  <summary>回收站</summary>
+  <div class="fold-body">
+    {% for t in trash %}
+    <form class="task-bar" method="post" action="/tasks/{{ t.id }}/restore">
+      <div>
+        <strong>{{ t.name }}</strong>
+        <p class="lede">{% if (t.type | task_label) != t.name %}{{ t.type | task_label }} · {% endif %}{{ t.cron | cron_zh }} · {{ t.deleted_at }}</p>
+      </div>
+      <button class="btn ghost" type="submit">恢复</button>
+    </form>
+    {% endfor %}
+  </div>
+</details>
+{% endif %}
+
+<details class="fold">
+  <summary>检索信源</summary>
+  <div class="fold-body">
+    <p class="lede">官方入口</p>
+    <p>{{ official_names | join("、") }}</p>
+    <p class="lede">媒体与社区</p>
+    <p>{{ news_names | join("、") }}</p>
+    <p class="lede">补充搜索</p>
+    <p>{{ search_backends | join("、") }}</p>
+  </div>
+</details>
+
+<details class="fold">
+  <summary>补充信源</summary>
+  <div class="fold-body">
+    {% for s in sources %}
+    {% if s.type != 'github_stars' %}
+    <form class="inner-form compact" method="post" action="/sources/{{ s.id }}/save">
+      <label>名称 <input name="name" value="{{ s.name }}" /></label>
+      {% if s.type == 'rss' %}
+      <label>RSS URL <input name="url" value="{{ (s.config_json | loads).get('url','') }}" /></label>
+      {% endif %}
+      <label class="check"><input type="checkbox" name="enabled" value="1" {{ 'checked' if s.enabled else '' }} /> 启用（{{ s.type }}）</label>
+      <button class="btn ghost" type="submit">保存</button>
+    </form>
+    {% endif %}
+    {% endfor %}
+    <form class="inner-form" method="post" action="/sources">
+      <h3>添加 RSS</h3>
+      <label>名称 <input name="name" required /></label>
+      <label>URL <input name="url" required placeholder="https://" /></label>
+      <button class="btn" type="submit">添加信源</button>
+    </form>
+  </div>
+</details>
+{% endblock %}

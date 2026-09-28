@@ -1,0 +1,6 @@
+{% macro hint(text) -%}
+<span class="hint-wrap">
+  <button type="button" class="hint" aria-label="说明" aria-expanded="false">「注」</button>
+  <span class="hint-pop" role="tooltip">{{ text }}</span>
+</span>
+{%- endmacro %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "macros.html" import hint %}
+{% block title %}文库 · 研读{% endblock %}
+{% block body %}
+<header class="mast">
+  <div>
+    <h1>文库{{ hint("过往写好的文章都在这里，不限于今天。") }}</h1>
+    <p class="lede">按类别收着，点开再看。</p>
+  </div>
+</header>
+<form class="filters" method="get">
+  <input type="search" name="q" value="{{ q }}" placeholder="搜索标题或正文" />
+  <select name="kind">
+    <option value="">全部类型</option>
+    <option value="paper" {{ 'selected' if kind=='paper' else '' }}>论文/新闻</option>
+    <option value="news" {{ 'selected' if kind=='news' else '' }}>新闻</option>
+    <option value="github_star" {{ 'selected' if kind=='github_star' else '' }}>GitHub</option>
+    <option value="agentic" {{ 'selected' if kind=='agentic' else '' }}>Agentic</option>
+    <option value="digest" {{ 'selected' if kind=='digest' else '' }}>目录/周回顾</option>
+  </select>
+  <button class="btn" type="submit">查找</button>
+</form>
+{% if sections %}
+{% for section in sections %}
+<details class="fold lib-fold">
+  <summary>{{ section.label }} <span class="fold-count">{{ section.stories|length }}</span></summary>
+  <div class="fold-body">
+    {% for it in section.stories %}
+    <a class="story" href="/item/{{ it.id }}?from=library">
+      <span class="tag">{{ item_tag(it) }}</span>
+      {% if it.unread %}<span class="dot"></span>{% endif %}
+      <h3>{{ it.title }}</h3>
+      <p>{{ day_label(it) }}{% if it.summary %} · {{ it.summary }}{% endif %}</p>
+    </a>
+    {% endfor %}
+  </div>
+</details>
+{% endfor %}
+{% else %}
+<section class="empty">
+  <h2>还没有文章</h2>
+  <p>写好的会按日期出现在这里。</p>
+</section>
+{% endif %}
+{% endblock %}

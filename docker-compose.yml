@@ -1,0 +1,33 @@
+services:
+  auto-research-brief:
+    build: .
+    image: auto-research-brief:local
+    container_name: auto-research-brief
+    ports:
+      - "8787:8787"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_PATH: /data/yandu.db
+      HOST: 0.0.0.0
+      PORT: 8787
+      TZ: Asia/Shanghai
+    volumes:
+      - auto-research-brief-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8787/health', timeout=4)",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+
+volumes:
+  auto-research-brief-data:

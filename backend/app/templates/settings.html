@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% from "macros.html" import hint %}
+{% block title %}设置 · 研读{% endblock %}
+{% block body %}
+<header class="mast">
+  <div>
+    <h1>设置{{ hint("接口与通知写在这里。各条定时任务怎么写，到「任务」里改。") }}</h1>
+    <p class="lede">密钥、通知，以及点开文章后的追问。</p>
+  </div>
+</header>
+
+{% if pw_notice %}
+<p class="{{ 'lede' if pw_ok else 'form-error' }}">{{ pw_notice }}</p>
+{% endif %}
+
+<details class="fold" open>
+  <summary>访问口令</summary>
+  <div class="fold-body">
+    <form class="inner-form" method="post" action="/settings/password">
+      <div class="grid2">
+        <label>当前口令 <input type="password" name="current_password" required autocomplete="current-password" /></label>
+        <label>新口令 <input type="password" name="new_password" required minlength="8" autocomplete="new-password" /></label>
+        <label>再输入一次 <input type="password" name="new_password2" required minlength="8" autocomplete="new-password" /></label>
+      </div>
+      <button class="btn" type="submit">更新口令</button>
+    </form>
+  </div>
+</details>
+
+<details class="fold" open>
+  <summary>接口</summary>
+  <div class="fold-body">
+    <form class="inner-form" method="post" action="/settings">
+      <div class="grid2">
+        <label>LLM Base URL <input name="llm_base_url" value="{{ stored.get('llm_base_url', env_base) }}" placeholder="https://api.deepseek.com 或中转站 …/v1" /></label>
+        <label>模型 <input name="llm_model" value="{{ stored.get('llm_model', env_model) }}" placeholder="deepseek-flash / 中转站上的模型名" /></label>
+        <label>LLM API Key <input type="password" name="llm_api_key" placeholder="{{ '已配置' if has_llm_key else '未配置' }}" /></label>
+        <label>GitHub 用户名 <input name="github_username" value="{{ github_username }}" /></label>
+        <label>GitHub Token <input type="password" name="github_token" placeholder="{{ '已配置' if has_github_token else '可选' }}" /></label>
+        <label>Brave Search API Key <input type="password" name="brave_api_key" placeholder="{{ '已配置' if has_brave_key else '可选，优先于 DuckDuckGo' }}" /></label>
+        <label>Tavily API Key <input type="password" name="tavily_api_key" placeholder="{{ '已配置' if has_tavily_key else '可选，Brave 未配时使用' }}" /></label>
+      </div>
+      <button class="btn" type="submit">保存接口</button>
+    </form>
+  </div>
+</details>
+
+<details class="fold" open>
+  <summary>企业微信</summary>
+  <div class="fold-body">
+    {% if notify_notice %}
+    <p class="{{ 'lede' if notify_ok else 'form-error' }}">{{ notify_notice }}</p>
+    {% endif %}
+    <ol class="steps">
+      <li>管理后台建一个自建应用，复制 CorpID、AgentId、Secret。</li>
+      <li>可见范围包含你自己。</li>
+      <li>要在微信里收，而不是只在企业微信里收，打开该应用的微信插件。</li>
+      <li>若开了企业可信 IP，填这台机器的公网出口 IPv4，不是 Docker 网桥地址。</li>
+      <li>公网地址填手机能打开的根地址，卡片上的「打开」才有用。未备案的 HTTP IP 在微信内置浏览器里可能打不开，所以卡片正文会带上标题。</li>
+    </ol>
+    <form class="inner-form" method="post" action="/settings/wecom">
+      <div class="grid2">
+        <label>公网地址 <input name="public_base_url" value="{{ public_base_url }}" placeholder="http://IP:8787" /></label>
+        <label>企业微信 CorpID <input name="wecom_corpid" value="{{ wecom_corpid }}" placeholder="{{ '已配置' if has_wecom else '' }}" /></label>
+        <label>企业微信 AgentId <input name="wecom_agentid" value="{{ wecom_agentid }}" /></label>
+        <label>企业微信 Secret <input type="password" name="wecom_secret" placeholder="{{ '已配置' if has_wecom else '应用 Secret' }}" /></label>
+        <label>企业微信接收人 <input name="wecom_touser" value="{{ wecom_touser }}" placeholder="@all 或 userid" /></label>
+      </div>
+      <label class="check"><input type="checkbox" name="wecom_notify_skips" value="1" {{ 'checked' if wecom_notify_skips else '' }} /> 空跑也通知（今日没写成稿时仍推一条）</label>
+      <div class="form-actions">
+        <button class="btn" type="submit">保存通知</button>
+      </div>
+    </form>
+    <form class="inner-form compact" method="post" action="/settings/wecom-test">
+      <button class="btn ghost" type="submit">发送测试</button>
+    </form>
+  </div>
+</details>
+
+<details class="fold" open>
+  <summary>追问</summary>
+  <div class="fold-body">
+    <p class="lede">点开文章右侧讨论时使用。筛选、快讯、精讲等指令在对应任务里。</p>
+    <form class="inner-form" method="post" action="/settings/prompts">
+      <div class="prompt-field">
+        <textarea name="chat" rows="16">{{ chat_prompt }}</textarea>
+      </div>
+      <label class="check"><input type="checkbox" name="chat_thinking" value="1" {{ 'checked' if chat_thinking else '' }} /> 追问时开启思考</label>
+      <button class="btn" type="submit">保存追问</button>
+    </form>
+  </div>
+</details>
+{% endblock %}

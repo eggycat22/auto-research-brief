@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "macros.html" import hint %}
+{% block title %}灵感 · 研读{% endblock %}
+{% block body %}
+<header class="mast">
+  <div>
+    <p class="kicker">Inbox</p>
+    <h1>灵感箱{{ hint("有链接就抽出正文再问；没有链接就当备忘。不会让模型另写一篇。") }}</h1>
+    <p class="lede">贴一篇文章的链接，抽出正文后就可以追问。没有链接的想法也会收在这里。</p>
+  </div>
+</header>
+
+<form class="panel" method="post" action="/inbox">
+  <label>标题
+    <input type="text" name="title" placeholder="可空；有链接时会用原文标题" />
+  </label>
+  <label>备注
+    <textarea name="note" rows="4" placeholder="https://arxiv.org/abs/… 或 GitHub / 博客链接；也可以只写想法"></textarea>
+  </label>
+  <div class="row">
+    <button class="btn" type="submit">收进箱子</button>
+  </div>
+</form>
+
+{% if not items %}
+<section class="empty compact">
+  <img src="/static/art/empty-inbox.jpg" alt="" onerror="this.style.display='none'" />
+  <p>还没有灵感。先记一条想法或关键词。</p>
+</section>
+{% endif %}
+
+<div class="stack">
+  {% for it in items %}
+  <div class="story row-card">
+    <a href="/item/{{ it.id }}?from=inbox">
+      <span class="tag">{{ it.status }}</span>
+      <h3>{{ it.title }}</h3>
+      <p>{{ it.summary }}</p>
+    </a>
+    <form method="post" action="/inbox/{{ it.id }}/delete">
+      <button class="btn ghost" type="submit">删除</button>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

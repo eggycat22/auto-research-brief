@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>研读 · 首次设置</title>
+  <script>try{var t=localStorage.getItem('yandu-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+  <link rel="stylesheet" href="/static/css/app.css?v=44" />
+</head>
+<body class="login-body">
+  <form class="login-card" method="post" action="/setup">
+    <p class="kicker">Close Read</p>
+    <h1>开始使用</h1>
+    <p class="lede">这是单用户自托管。先设一个访问口令，可选填模型和 GitHub。</p>
+    {% if error %}<p class="form-error">{{ error }}</p>{% endif %}
+    <label>访问口令
+      <input type="password" name="password" required autofocus minlength="8" autocomplete="new-password" />
+    </label>
+    <label>再输入一次
+      <input type="password" name="password2" required minlength="8" autocomplete="new-password" />
+    </label>
+    <label>LLM API Key（可选）
+      <input type="password" name="llm_api_key" autocomplete="off" />
+    </label>
+    <label>GitHub 用户名（可选，用来读公开 Star）
+      <input type="text" name="github_username" autocomplete="username" />
+    </label>
+    <button type="submit">保存并进入</button>
+  </form>
+</body>
+</html>

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% from "macros.html" import hint %}
+{% block title %}今日 · 研读{% endblock %}
+{% block body %}
+<header class="mast">
+  <div>
+    <p class="kicker">{{ today }}</p>
+    <h1>今日简报{{ hint("当天写好的快讯与精讲，点开即可继续问。") }}</h1>
+    <p class="lede">今日要读的内容。</p>
+  </div>
+  <aside class="mast-side">
+    <p>灵感箱 {{ inbox_n }} 条</p>
+    <p>今日开销 {{ today_cost | spend }}</p>
+  </aside>
+</header>
+
+{% if not slots %}
+<section class="empty">
+  <img src="/static/art/empty-today.jpg" alt="" onerror="this.style.display='none'" />
+  <h2>还没有任务</h2>
+  <p>先在任务页安排要写的内容。</p>
+  <a class="btn" href="/tasks">打开任务</a>
+</section>
+{% endif %}
+
+{% for slot in slots %}
+<section class="today-block">
+  <h2 class="today-sec">{{ slot.task.name }}</h2>
+  {% if slot.stories or slot.headlines %}
+  {% if slot.stories %}
+  <div class="stack">
+    {% for it in slot.stories %}
+    <a class="story" href="/item/{{ it.id }}?from=today">
+      <span class="tag{% if it.kind in ['digest', 'github_star'] %} sage{% endif %}">{{ item_tag(it) }}</span>
+      {% if it.unread %}<span class="dot"></span>{% endif %}
+      <h3>{{ it.title }}</h3>
+      {% if it.summary %}<p>{{ it.summary }}</p>{% endif %}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if slot.headlines %}
+  <ul class="today-headlines">
+    {% for it in slot.headlines %}
+    <li>
+      <a href="/item/{{ it.id }}?from=today">{{ it.title }}</a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% else %}
+  <div class="today-empty">
+    <p>今天还没有内容。</p>
+    <form method="post" action="/tasks/{{ slot.task.id }}/run">
+      <button class="btn" type="submit">立即运行</button>
+    </form>
+  </div>
+  {% endif %}
+</section>
+{% endfor %}
+{% endblock %}
